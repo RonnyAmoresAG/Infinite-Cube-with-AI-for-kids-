@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 from collections import Counter
-import subprocess
+
 
 pygame.init()
 win = pygame.display.set_mode((640, 480))
@@ -199,7 +199,6 @@ def three_choose_from_six():
     win.fill((59, 89, 152))
     win.blit(font_2.render('Please choose the number below -interfaz :', False, (212, 216, 232)), (140, 50))
 
-    subprocess.Popen(["python", "C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Final/PRUEBAS NUCLEO FINAL .py"])
 
     pygame.draw.rect(win, (148, 148, 148), (270, 85, 100, 160))
     pygame.draw.rect(win, (242, 242, 242), (235, 275, 80, 120))
