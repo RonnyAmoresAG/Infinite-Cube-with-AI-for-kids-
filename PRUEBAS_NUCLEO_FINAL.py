@@ -5,7 +5,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from collections import Counter
 
-# Configuración
+# Configuración ojo
 MODEL_PATH = 'C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Prueba2/digits.h5'
 CONFIDENCE_THRESHOLD = 0.95
 CAPTURE_WIDTH = 640
