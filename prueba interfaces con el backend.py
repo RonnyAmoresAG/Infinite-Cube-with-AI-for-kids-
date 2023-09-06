@@ -13,7 +13,100 @@ import numpy as np
 from tensorflow.keras.models import load_model
 from collections import Counter
 import subprocess
+import threading
+import time
+import traceback
 
+###
+from PIL import Image, ImageTk
+from collections import Counter
+
+# Configuración ojo
+MODEL_PATH = 'C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Prueba2/digits.h5'
+CONFIDENCE_THRESHOLD = 0.95
+CAPTURE_WIDTH = 640
+CAPTURE_HEIGHT = 480
+RESIZE_WIDTH = 200
+RESIZE_HEIGHT = 200
+PREDICTION_FRAMES = 15 #10
+
+lock = threading.Lock()
+predicted_number = None
+# Cargar el modelo
+model = load_model(MODEL_PATH)
+
+# Función para realizar la predicción
+def prediction(image, model):
+    img = cv2.resize(image, (28, 28))
+    img = img / 255
+    img = img.reshape(1, 28, 28, 1)
+    predict = model.predict(img)
+    prob = np.amax(predict)
+    class_index = np.argmax(predict)
+    result = class_index
+    if prob < CONFIDENCE_THRESHOLD:
+        result = None
+        prob = 0
+    return result, prob
+
+# Lista para almacenar las últimas predicciones
+last_predictions = []
+root = None
+video_label = None 
+# Función para actualizar la imagen en la interfaz gráfica
+def update_image():
+    global last_predictions
+    global cap
+    global predicted_number
+
+    _, frame = cap.read()
+    frame_copy = frame.copy()
+
+    bbox_size = (70, 70)
+    bbox = [(int(CAPTURE_WIDTH // 2 - bbox_size[0] // 2), int(CAPTURE_HEIGHT // 2 - bbox_size[1] // 2)),
+            (int(CAPTURE_WIDTH // 2 + bbox_size[0] // 2), int(CAPTURE_HEIGHT // 2 + bbox_size[1] // 2))]
+
+    img_cropped = frame[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]]
+    img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
+    img_gray = cv2.resize(img_gray, (RESIZE_WIDTH, RESIZE_HEIGHT))
+
+    result, probability = prediction(img_gray, model)
+    last_predictions.append(result)
+    if len(last_predictions) > PREDICTION_FRAMES:
+        last_predictions.pop(0)
+    most_common_prediction = Counter(last_predictions).most_common(1)[0][0]
+    predicted_number = most_common_prediction
+
+    cv2.putText(frame_copy, f"Prediction: {most_common_prediction}", (40, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2, cv2.LINE_AA)
+    cv2.putText(frame_copy, "Probabilty: {:.2f}".format(probability), (40, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2, cv2.LINE_AA)
+
+    color = (0, 255, 0) if probability > CONFIDENCE_THRESHOLD else (0, 0, 255)
+    cv2.rectangle(frame_copy, bbox[0], bbox[1], color, 3)
+
+    # Mostrar la imagen con OpenCV
+    cv2.imshow("Handwritten Digit Recognition", frame_copy)
+    cv2.waitKey(1)
+
+def run_digit_recognition_gui():
+    global cap
+    try:
+        # Inicializar la captura de video
+        cap = cv2.VideoCapture(2 + cv2.CAP_DSHOW)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
+
+        while predicted_number is None:
+            update_image()
+
+    except Exception as e:
+        print("Error en run_digit_recognition_gui:")
+        print(traceback.format_exc())
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+
+
+####
 pygame.init()
 win = pygame.display.set_mode((640, 480))
 pygame.display.set_caption("CUBERSE ")
@@ -171,6 +264,18 @@ def adj_en_char2(en_char, en_char_x):
     return en_char_x
 
 
+def correct(): 
+    win.fill((59, 89, 152))
+    win.blit(font_1.render('CORRECTO', False, (242, 242, 242)), (215, 55))
+    win.blit(font_1.render('Lo hiciste genial :D', False, (242, 242, 242)), (145, 120))
+
+def incorrect():
+    win.fill((59, 89, 152))
+    win.blit(font_1.render('INCORRECTO', False, (242, 242, 242)), (215, 55))
+    win.blit(font_1.render('Perdiste una vida :C', False, (242, 242, 242)), (145, 120))
+
+    
+
 def show_card_three():
     global numero_aleatorio
     win.fill((59, 89, 152))
@@ -188,27 +293,37 @@ def show_card_three():
     win.blit(font_6.render(numero_aleatorio, False, (255, 255, 255)), (en_char_1_x, 270))
     return numero_aleatorio
 
-confirm_button = pygame.Rect(200, 415, 110, 40)
-reset_button = pygame.Rect(330, 415, 110, 40)
+##
+## page 2
+# 
+
 confirm_button = pygame.Rect(200, 415, 110, 40)
 reset_button = pygame.Rect(330, 415, 110, 40)
 
-## page 2 
 def three_choose_from_six():
     global numero_aleatorio
+    global predicted_number
+    
+    
     win.fill((59, 89, 152))
     win.blit(font_2.render('Please choose the number below -interfaz :', False, (212, 216, 232)), (140, 50))
     
+    threading.Thread(target=run_digit_recognition_gui).start()
     
-    subprocess.Popen(["python", "C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Proyeto_Final_HCI/Infinite-Cube-with-AI-for-kids-/PRUEBAS_NUCLEO_FINAL.py"])
-
+    #subprocess.Popen(["python", "C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Proyeto_Final_HCI/Infinite-Cube-with-AI-for-kids-/PRUEBAS_NUCLEO_FINAL.py"])
+    
     pygame.draw.rect(win, (148, 148, 148), (270, 85, 100, 160))
     pygame.draw.rect(win, (242, 242, 242), (235, 275, 80, 120))
     pygame.draw.rect(win, (176, 188, 213), (230, 270, 80, 120))
     
+    while predicted_number is None:
+        time.sleep(0.1)
     en_char_2_x = 247
-    en_char_2_x = adj_en_char2(numero_aleatorio, en_char_2_x)
-    win.blit(font_7.render(numero_aleatorio, False, (255, 255, 255)), (en_char_2_x, 270))
+    if predicted_number is not None:
+        en_char_2_x = adj_en_char2(str(predicted_number), en_char_2_x)
+        win.blit(font_7.render(str(predicted_number), False, (255, 255, 255)), (en_char_2_x, 270))
+    else:
+        win.blit(font_7.render("Waiting...", False, (255, 255, 255)), (en_char_2_x, 270))
 
     pygame.draw.rect(win, (255, 255, 255), (200, 415, 110, 40))
     win.blit(font_4.render('Confirm', False, (59, 89, 152)), (220, 422))
@@ -216,6 +331,38 @@ def three_choose_from_six():
     win.blit(font_4.render('Reset', False, (59, 89, 152)), (360, 422))
     win.blit(font_2.render('Mark : '+str(mark), False, (212, 216, 232)), (510, 10))
     win.blit(font_2.render('Life : '+str(life), False, (212, 216, 232)), (20, 10))   
+
+
+
+####
+def reset_detection():
+    try:
+        global predicted_number
+        global cap
+        
+        # Libera la cámara
+        cap.release()
+        # Pequeño retraso para asegurarnos de que la cámara se libere correctamente
+        time.sleep(1)
+        
+        # Vuelve a inicializar la cámara
+        cap = cv2.VideoCapture(2 + cv2.CAP_DSHOW)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
+        
+        # Reinicia la predicción
+        with lock:
+            predicted_number = None
+        
+        # Muestra nuevamente la ventana con el número a predecir
+        numero_aleatorio = show_card_three()
+        three_choose_from_six()
+        pygame.display.update()  # Actualiza la pantalla
+    except Exception as e:
+        print("Error en reset_detection:")
+        print(traceback.format_exc())
+
+
 
 
 def word_one_button_pressed():
@@ -298,6 +445,7 @@ while run:
             game_over()
 
         if page == 1:
+            show_card_three()  # Mueve esta línea aquí
             if event.type == pygame.USEREVENT:
                 time_count -= 1
             time_text = int(time_count)
@@ -309,10 +457,7 @@ while run:
             clock.tick(60)
             if time_count <= 0:
                 page = 2
-                position = 0
-                choose_ans = []
                 if len(correct_ans) == 3:
-                    numero_aleatorio = show_card_three()
                     three_choose_from_six()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -346,29 +491,26 @@ while run:
                 mark = 0
 
             if (confirm_button.collidepoint(mouse_pos)) & (page == 2):
-                    if choose_ans == correct_ans:
+                    if str(predicted_number) == numero_aleatorio:
                         mark += 10
-                        page = 3
-                        delay = 1
-                        correct_match()
+                        correct()
+                        pygame.display.update()
+                        pygame.time.wait(2000)  
                     else:
                         life -= 1
-                        word_one_idx = 0
-                        word_two_idx = 0
-                        word_three_idx = 0
-                        word_four_idx = 0
-                        word_five_idx = 0
-                        word_six_idx = 0
-                        position = 0
-                        choose_ans = []
-                        if len(correct_ans) == 3:
-                           numero_aleatorio = show_card_three()
-                           three_choose_from_six(numero_aleatorio)
+                        incorrect()
+                        pygame.display.update()
+                        pygame.time.wait(2000)  # Mostrar la pantalla "incorrect" durante 2 segundos
+
+                    page = 1
+                    time_count = time_limit + 2
+                    numero_aleatorio = None
+                    predicted_number = None
+                    pygame.display.update()
                         
             if (reset_button.collidepoint(mouse_pos)) & (page == 2):
-                if len(correct_ans) == 3:
-                    numero_aleatorio = show_card_three()
-                    three_choose_from_six(numero_aleatorio)
+                reset_detection()
+                
                
             if (restart_button.collidepoint(mouse_pos)) & (page == 4):
                 page = 0
