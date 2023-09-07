@@ -76,6 +76,7 @@ def update_image():
         last_predictions.pop(0)
     most_common_prediction = Counter(last_predictions).most_common(1)[0][0]
     predicted_number = most_common_prediction
+    print(predicted_number)
 
     cv2.putText(frame_copy, f"Prediction: {most_common_prediction}", (40, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2, cv2.LINE_AA)
     cv2.putText(frame_copy, "Probabilty: {:.2f}".format(probability), (40, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2, cv2.LINE_AA)
@@ -267,12 +268,43 @@ def adj_en_char2(en_char, en_char_x):
 def correct(): 
     win.fill((59, 89, 152))
     win.blit(font_1.render('CORRECTO', False, (242, 242, 242)), (215, 55))
-    win.blit(font_1.render('Lo hiciste genial :D', False, (242, 242, 242)), (145, 120))
+    win.blit(font_1.render('Ganaste 10 puntos', False, (242, 242, 242)), (145, 120))
+
+    # Cargar la imagen
+    image_path = 'cara.png'  # Cambia esto a la ruta de tu imagen
+    image = pygame.image.load(image_path)
+
+    # Obtener las dimensiones de la ventana y la imagen
+    win_width, win_height = win.get_size()
+    img_width, img_height = image.get_size()
+
+    # Calcular la posición para centrar la imagen en la ventana
+    x = (win_width - img_width) // 2
+    y = (win_height - img_height) // 2 + 120  # 120 es aproximadamente la posición y del último texto
+
+    # Dibujar la imagen en la ventana
+    win.blit(image, (x, y))
+
 
 def incorrect():
     win.fill((59, 89, 152))
     win.blit(font_1.render('INCORRECTO', False, (242, 242, 242)), (215, 55))
-    win.blit(font_1.render('Perdiste una vida :C', False, (242, 242, 242)), (145, 120))
+    win.blit(font_1.render('Perdiste una vida ', False, (242, 242, 242)), (145, 120))
+
+    # Cargar la imagen
+    image_path = 'cara_i_1.png'  # Cambia esto a la ruta de tu imagen
+    image = pygame.image.load(image_path)
+
+    # Obtener las dimensiones de la ventana y la imagen
+    win_width, win_height = win.get_size()
+    img_width, img_height = image.get_size()
+
+    # Calcular la posición para centrar la imagen en la ventana
+    x = (win_width - img_width) // 2
+    y = (win_height - img_height) // 2 + 120  # 120 es aproximadamente la posición y del último texto
+
+    # Dibujar la imagen en la ventana
+    win.blit(image, (x, y))
 
     
 
@@ -312,7 +344,7 @@ def three_choose_from_six():
     
     #subprocess.Popen(["python", "C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Proyeto_Final_HCI/Infinite-Cube-with-AI-for-kids-/PRUEBAS_NUCLEO_FINAL.py"])
     
-    pygame.draw.rect(win, (148, 148, 148), (270, 85, 100, 160))
+    #pygame.draw.rect(win, (148, 148, 148), (270, 85, 100, 160))
     pygame.draw.rect(win, (242, 242, 242), (235, 275, 80, 120))
     pygame.draw.rect(win, (176, 188, 213), (230, 270, 80, 120))
     
@@ -463,13 +495,13 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
             if (word_length_button_three.collidepoint(mouse_pos)) & (page == 0):
-                word_length = 3
+                life = 5
                 word_length_button_three_pressed()
             if (word_length_button_four.collidepoint(mouse_pos)) & (page == 0):
-                word_length = 4
+                life = 3
                 word_length_button_four_pressed()
             if (word_length_button_random.collidepoint(mouse_pos)) & (page == 0):
-                word_length = 5
+                life = 1
                 word_length_button_random_pressed()
 
             if (time_limit_button_three.collidepoint(mouse_pos)) & (page == 0):
@@ -495,15 +527,15 @@ while run:
                         mark += 10
                         correct()
                         pygame.display.update()
-                        pygame.time.wait(2000)  
+                        pygame.time.wait(3000)  
                     else:
                         life -= 1
                         incorrect()
                         pygame.display.update()
-                        pygame.time.wait(2000)  # Mostrar la pantalla "incorrect" durante 2 segundos
+                        pygame.time.wait(3000)  # Mostrar la pantalla "incorrect" durante 3 segundos
 
                     page = 1
-                    time_count = time_limit + 2
+                    time_count = time_limit + 3
                     numero_aleatorio = None
                     predicted_number = None
                     pygame.display.update()
