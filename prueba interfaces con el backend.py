@@ -16,13 +16,12 @@ import subprocess
 import threading
 import time
 import traceback
-
-###
-from PIL import Image, ImageTk
 from collections import Counter
 
-# Configuración ojo
-MODEL_PATH = 'C:/Users/Ronny Amores/Desktop/Sexto Semestre EPN/HCI/PROYECTOI/Prueba2/digits.h5'
+
+#### BACKEND ####
+# Parametros modelo IA
+MODEL_PATH = 'digits.h5'
 CONFIDENCE_THRESHOLD = 0.95
 CAPTURE_WIDTH = 640
 CAPTURE_HEIGHT = 480
@@ -107,13 +106,23 @@ def run_digit_recognition_gui():
         cv2.destroyAllWindows()
 
 
-####
+
+#### FRONTEND ####
 pygame.init()
+
+# MUSIC
+mixer.init()
+mixer.music.load('zelda.mp3')
+mixer.music.play(-1)  # El -1 hará que la música se repita indefinidamente.
+#mixer.music.set_volume(0.5)  # Establece el volumen al 50%. Puedes cambiar 0.5 a cualquier valor entre 0 y 1.
+
+
 win = pygame.display.set_mode((640, 480))
 pygame.display.set_caption("CUBERSE ")
 
 mixer.init()
 
+# FONTS
 pygame.font.init()
 font_1 = pygame.font.SysFont('impact', 55)
 font_2 = pygame.font.SysFont('Arial', 25)
@@ -123,6 +132,7 @@ font_5 = pygame.font.SysFont('impact', 25)
 font_6 = pygame.font.SysFont('impact', 120)
 font_7 = pygame.font.SysFont('impact', 90)
 
+# time
 clock = pygame.time.Clock()
 pygame.time.set_timer(pygame.USEREVENT, 1000)
 
@@ -265,13 +275,16 @@ def adj_en_char2(en_char, en_char_x):
     return en_char_x
 
 
+#############
+# PAGE CORRECT #
+#############
 def correct(): 
     win.fill((59, 89, 152))
-    win.blit(font_1.render('CORRECTO', False, (242, 242, 242)), (215, 55))
-    win.blit(font_1.render('Ganaste 10 puntos', False, (242, 242, 242)), (145, 120))
+    win.blit(font_1.render('CORRECTO', False, (242, 242, 242)), (200, 55))
+    win.blit(font_1.render('Ganaste 10 puntos', False, (242, 242, 242)), (115, 120))
 
     # Cargar la imagen
-    image_path = 'cara.png'  # Cambia esto a la ruta de tu imagen
+    image_path = 'face_correct.png'  # Cambia esto a la ruta de tu imagen
     image = pygame.image.load(image_path)
 
     # Obtener las dimensiones de la ventana y la imagen
@@ -285,14 +298,17 @@ def correct():
     # Dibujar la imagen en la ventana
     win.blit(image, (x, y))
 
+#############
+# PAGE INCORRECT #
+#############
 
 def incorrect():
     win.fill((59, 89, 152))
-    win.blit(font_1.render('INCORRECTO', False, (242, 242, 242)), (215, 55))
-    win.blit(font_1.render('Perdiste una vida ', False, (242, 242, 242)), (145, 120))
+    win.blit(font_1.render('INCORRECTO', False, (242, 242, 242)), (200, 55))
+    win.blit(font_1.render('Perdiste una vida ', False, (242, 242, 242)), (115, 120))
 
     # Cargar la imagen
-    image_path = 'cara_i_1.png'  # Cambia esto a la ruta de tu imagen
+    image_path = 'face_incorrect.png'  # Cambia esto a la ruta de tu imagen
     image = pygame.image.load(image_path)
 
     # Obtener las dimensiones de la ventana y la imagen
@@ -307,13 +323,13 @@ def incorrect():
     win.blit(image, (x, y))
 
     
-
+### random number ### 
 def show_card_three():
     global numero_aleatorio
     win.fill((59, 89, 152))
     win.blit(font_1.render('Time', False, (242, 242, 242)), (215, 55))
     win.blit(font_1.render('Countdown', False, (242, 242, 242)), (145, 120))
-    win.blit(font_2.render('Remember the number below :', False, (212, 216, 232)), (155, 235))
+    win.blit(font_2.render('Find the number on the cube and focus it on the camera:', False, (212, 216, 232)), (65, 235))
     pygame.draw.rect(win, (242, 242, 242), (280, 280, 100, 160))
     pygame.draw.rect(win, (176, 188, 213), (270, 270, 100, 160))
     # Genera un número aleatorio
@@ -325,13 +341,14 @@ def show_card_three():
     win.blit(font_6.render(numero_aleatorio, False, (255, 255, 255)), (en_char_1_x, 270))
     return numero_aleatorio
 
-##
-## page 2
-# 
+###
+### 
 
 confirm_button = pygame.Rect(200, 415, 110, 40)
 reset_button = pygame.Rect(330, 415, 110, 40)
-
+###
+# INTERFAZ NUMEROS 
+### 
 def three_choose_from_six():
     global numero_aleatorio
     global predicted_number
@@ -366,25 +383,26 @@ def three_choose_from_six():
 
 
 
-####
+####  RESET 
 def reset_detection():
     try:
         global predicted_number
         global cap
-        
+        global last_predictions
         # Libera la cámara
         cap.release()
         # Pequeño retraso para asegurarnos de que la cámara se libere correctamente
-        time.sleep(1)
-        
-        # Vuelve a inicializar la cámara
-        cap = cv2.VideoCapture(2 + cv2.CAP_DSHOW)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
+        time.sleep(2)
         
         # Reinicia la predicción
         with lock:
             predicted_number = None
+            last_predictions = []
+
+        # Vuelve a inicializar la cámara
+        cap = cv2.VideoCapture(2 + cv2.CAP_DSHOW)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
         
         # Muestra nuevamente la ventana con el número a predecir
         numero_aleatorio = show_card_three()
@@ -415,7 +433,6 @@ def word_five_button_pressed():
 def word_six_button_pressed():
     pygame.draw.rect(win, (100, 100, 100), (530, 270, 80, 120))
 
-correct_ans = [1,2,3]
 
 next_button = pygame.Rect(0, 420, 640, 60)
 music_three_button = pygame.Rect(60, 314, 80, 80)
@@ -423,6 +440,7 @@ music_four_button = pygame.Rect(30, 314, 80, 80)
 restart_button = pygame.Rect(200, 265, 110, 40)
 quit_button = pygame.Rect(330, 265, 110, 40)
 
+# GAME OVER 
 def game_over():
     win.fill((59, 89, 152))
     win.blit(font_6.render('Game Over', False, (212, 216, 232)), (50, 10))
@@ -433,6 +451,8 @@ def game_over():
     pygame.draw.rect(win, (255, 255, 255), (330, 265, 110, 40))
     win.blit(font_4.render('Quit', False, (59, 89, 152)), (365, 272))
 
+
+# RESTART 
 def restart():
     # Background
     win.fill((59, 89, 152))  # title
@@ -489,8 +509,7 @@ while run:
             clock.tick(60)
             if time_count <= 0:
                 page = 2
-                if len(correct_ans) == 3:
-                    three_choose_from_six()
+                three_choose_from_six()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
@@ -517,8 +536,7 @@ while run:
             if (game_start_button.collidepoint(mouse_pos)) & (page == 0):       
                 page = 1
                 time_count = time_limit + 1
-                if len(correct_ans) == 3:
-                    show_card_three()
+                show_card_three()
                 idx = 0
                 mark = 0
 
@@ -538,6 +556,7 @@ while run:
                     time_count = time_limit + 3
                     numero_aleatorio = None
                     predicted_number = None
+                    last_predictions = []
                     pygame.display.update()
                         
             if (reset_button.collidepoint(mouse_pos)) & (page == 2):
